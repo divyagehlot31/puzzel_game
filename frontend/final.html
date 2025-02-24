@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>⭐ Star Grid with Regions ⭐</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #d7d0d5;
+        }
+
+
+        #grid-container {
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+
+        #grid-size {
+            width: 120px;
+
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #727171;
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 20px;
+            line-height: 40px;
+            cursor: pointer;
+        }
+
+
+        #message {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        .re-1 {
+            background-color: #f7aaaa;
+        }
+
+        .re-2 {
+            background-color: #b3f1b3;
+        }
+
+        .re-3 {
+            background-color: #ccccff;
+        }
+
+        .re-4 {
+            background-color: #efb881;
+        }
+
+        .re-5 {
+            background-color: #cc99ff;
+        }
+
+        .re-6 {
+            background-color: #99ffcc;
+        }
+
+        .re-7 {
+            background-color: #f43c98;
+        }
+
+        .re-8 {
+            background-color: #99ccff;
+        }
+
+        .re-9 {
+            background-color: #eeee4e;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>⭐Star Placement Game ⭐</h1>
+
+    <div id="input-container">
+        <label for="grid-size">Enter Grid Size : </label>
+        <input type="number" id="grid-size" min="1" max="9" placeholder="Enter Grid Size">
+        <button onclick="generateGrid()">Generate Grid</button>
+    </div>
+
+    <div id="grid-container"></div>
+
+    <div id="message"></div>
+
+    <script>
+        let gridSize;
+        let starGrid = [];
+        let regionGrid = [];
+
+        function generateGrid() {
+            gridSize = parseInt(document.getElementById("grid-size").value);
+            if (isNaN(gridSize) || gridSize <= 0 || gridSize > 9) {
+                alert("Enter a valid grid size (1-9)");
+                return;
+            }
+
+            starGrid = Array.from({ length: gridSize }, () => Array(gridSize).fill(' '));
+            regionGrid = createRegions(gridSize);                      //call createRegion function for creating regions
+            displayGrid();
+        }
+
+        function createRegions(size) {
+            const grid = Array.from({ length: size }, () => Array(size).fill(0)); //grid create karega
+            let regionId = 1;
+
+            // Place initial region seeds
+            let solution = [];
+            while (solution.length < size) {
+                let r = Math.floor(Math.random() * size);      //raw and coloum generate
+                let c = Math.floor(Math.random() * size);
+                if (!solution.some(([x, y]) => x === r && y === c)) {      //if true to store in solution
+                    solution.push([r, c]);                                //region store in solution
+                    grid[r][c] = regionId++;
+                }
+            }
+
+            let checking = true;
+            while (checking) {
+                checking = false;
+
+                for (let r = 0; r < size; r++) {               // itreate all raw and col
+                    for (let c = 0; c < size; c++) {
+                        if (grid[r][c] !== 0) {            //if r and c initially 0 nhi he to age jayega
+                            let currentRegion = grid[r][c];          //store regin id number
+
+                            const directions = [
+                                [r - 1, c],
+                                [r + 1, c],
+                                [r, c - 1],
+                                [r, c + 1],
+                            ];
+
+                            for (let [nr, nc] of directions) {
+                                if (
+                                    nr >= 0 && nr < size &&
+                                    nc >= 0 && nc < size &&
+                                    grid[nr][nc] === 0
+                                ) {
+                                    grid[nr][nc] = currentRegion;
+                                    checking = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return grid;
+        }
+
+
+        function displayGrid() {
+            const container = document.getElementById("grid-container");
+            container.innerHTML = "";
+
+            for (let i = 0; i < gridSize; i++) {                                 
+                const rowDiv = document.createElement("div");                 //create container on all rows and cells
+                for (let j = 0; j < gridSize; j++) {
+                    const cell = document.createElement("div");
+                    const regionNum = regionGrid[i][j];           
+                    cell.className = `cell re-${regionNum}`;                 //assign color on region
+                    cell.innerText.row = i;                                  //fill color
+                    cell.innerText.col = j;
+                    cell.onclick = () => placeStar(i, j);                    //
+
+                    if (starGrid[i][j] === '*') {
+                        cell.innerText = '⭐';
+
+                    }
+
+                    rowDiv.appendChild(cell);
+                }
+                container.appendChild(rowDiv);
+            }
+        }
+
+        function placeStar(row, col) {
+            const message = document.getElementById("message");
+            message.textContent = "";
+
+            if (starGrid[row][col] === '*') {                  
+                starGrid[row][col] = ' ';                       //remove star
+            } else {
+                if (!canPlaceStar(row, col)) {
+                    message.textContent = "❌ Invalid Placement!";                                //check canplacestar function
+                    message.style.color = "red";
+                    return;
+                }
+                starGrid[row][col] = '*';
+            }
+            displayGrid();
+        }
+
+        function canPlaceStar(row, col) {
+            let regionId = regionGrid[row][col];
+
+            // Same row, column, or adjacent cell check
+            for (let i = 0; i < gridSize; i++) {
+                if (starGrid[row][i] === '*' || starGrid[i][col] === '*') return false;
+            }
+
+            let directions = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
+            for (let [dx, dy] of directions) {
+                let nx = row + dx, ny = col + dy;
+                if (nx >= 0 && nx < gridSize && ny >= 0 && ny < gridSize && starGrid[nx][ny] === '*') return false;
+            }
+
+            // Check if another star exists in the same region
+            for (let i = 0; i < gridSize; i++) {
+                for (let j = 0; j < gridSize; j++) {
+                    if (regionGrid[i][j] === regionId && starGrid[i][j] === '*') return false;
+                }
+            }
+
+            return true;
+        }
+    </script>
+</body>
+
+</html>
